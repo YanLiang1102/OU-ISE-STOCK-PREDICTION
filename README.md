@@ -1,2 +1,2 @@
 # OU-ISE-STOCK-PREDICTION
-OU-ISE5103-FinalProject-StockPrediction
+Analyze time series data with R to do stock prediction. with data analysis and data visualization.
