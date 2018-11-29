@@ -13,6 +13,9 @@ getSymbols('FB', from='2013-01-01', to='2018-11-20')
 
 #without any update and this is the raw data update
 stock_prices=AMZN[,4]
+stock_prices_goo=GOOGL[,4]
+stock_prices_aap=AAPL[,4]
+stock_prices_fb=FB[,4]
 plot(stock_prices,title="amazon stock")
 
 stock=log(stock_prices)
@@ -172,6 +175,53 @@ final_mat<-as.tibble(final_mat)
 colnames(final_mat)<-name
 
 final_mat%>%gather("Simulation","Price",2:501)%>%ggplot(aes(x=Day,y=Price,Group=Simulation))+geom_line(alpha=0.2)+labs(title="(AMZN): 500 Monte Carlo Simulations for 4 Years")+theme_bw()
+
+#building the model of knn to determine if the stock will go up and donw
+library(class)
+library(dplyr)
+library(lubridate)
+set.seed(100)
+
+#from the previous analysis we can see that Amazon and Google and Facebook are highly correlated, so will using 
+#that price to predict too.
+stocks <- read.csv('stocks.csv')
+fm<-as.data.frame(stock_prices)
+fm$GOOGL.Close<-stock_prices_goo
+fm$AAPL.Close<-stock_prices_aap
+#don't need this for the feature engineering.
+fm$FB.Close<-stock_prices_fb
+getSymbols('AMZN', from='2012-11-11', to='2013-01-01')
+#find the start price is 2012-12-31 is 250.87 this is needed to determine if the first record is increasing or
+#decreasing
+start<-250.87
+#construct the increase label.
+for(i in 1:nrow(stock_prices))
+{
+  fm$Increase[i]<-(fm$AMZN.Close[i]-start)>=0
+  start=fm$AMZN.Close[i]
+}
+fm.train<-fm[1:1200,]
+fm.test<-fm[1201,nrow(stock_prices)]
+#construct the predictors
+predictors <- cbind(lag(fm$AAPL.Close, default = 76.02), lag(fm$GOOGL.Close, default = 354.0440), lag(fm$AMZN.Close, default = 250.87))
+prediction <- knn(predictors[1:1200, ], predictors[1200:nrow(stock_prices), ], fm$Increase[1:1200], k = 9)
+table(prediction, fm$Increase[1200:nrow(stock_prices)])
+mean(prediction == fm$Increase[1200:nrow(stock_prices)])
+#this is the output for k=10 and beat  random so based on how much money you have a litle bit over 50% actually it is good
+0.584507
+
+accuracy <- rep(0, 20)
+k <- 1:20
+for(x in k){
+  prediction <- knn(predictors[1:1200, ], predictors[1200:nrow(stock_prices), ],
+                    fm$Increase[1:1200], k = x)
+  accuracy[x] <- mean(prediction == fm$Increase[1200:nrow(stock_prices)])
+}
+
+plot(k, accuracy, type = 'b')
+#from here we can see the best accuracy can be achieved when k=9 and the accuracy is calculated above we saw the accuracy is 58.45%
+
+
 
 
 
