@@ -1,5 +1,7 @@
-#predict the stock price with ARIMA:
-
+####################################
+############
+###########start of yan's code.
+####################################
 library(quantmod)
 library(tseries)
 library(timeSeries)
@@ -10,6 +12,16 @@ getSymbols('AMZN', from='2013-01-01', to='2018-11-20')
 getSymbols('GOOGL', from='2013-01-01', to='2018-11-20')
 getSymbols('AAPL', from='2013-01-01', to='2018-11-20')
 getSymbols('FB', from='2013-01-01', to='2018-11-20')
+getSymbols('T',from='2013-01-01',to='2018-11-20')
+getSymbols('TMUS',from='2013-01-01',to='2018-11-20')
+getSymbols('S',from='2013-01-01',to='2018-11-20')
+getSymbols('VZ',from='2013-01-01',to='2018-11-20')
+getSymbols('AAL',from='2013-01-01',to='2018-11-20')
+getSymbols('DAL',from='2013-01-01',to='2018-11-20')
+getSymbols('LUV',from='2013-01-01',to='2018-11-20')
+getSymbols('ALK',from='2013-01-01',to='2018-11-20')
+
+
 
 #without any update and this is the raw data update
 stock_prices=AMZN[,4]
@@ -17,6 +29,15 @@ stock_prices_goo=GOOGL[,4]
 stock_prices_aap=AAPL[,4]
 stock_prices_fb=FB[,4]
 plot(stock_prices,title="amazon stock")
+att=T[,4]
+tmobile=TMUS[,4]
+sprint=S[,4]
+verizon=VZ[,4]
+american=AAL[,4]
+delta=DAL[,4]
+southwest<-LUV[,4]
+alaska<-ALK[,4]
+
 
 stock=log(stock_prices)
 #doing lag1 differencing model to make the series to be stationary.
@@ -129,12 +150,26 @@ getSymbols("AMZN",from="2013-01-01",to="2018-11-20")
 AMZN_log_returns<-AMZN%>%Ad()%>%dailyReturn(type='log')
 
 AMZN%>%Ad()%>%chartSeries()
-AMZN%>%chartSeries(TA='addBBands();addVo();addMACD()',subset='2018')
+AMZN%>%chartSeries(TA='addBBands();addVo();addMACD()',subset='2018',name="amazon 2018")
+
+T%>%Ad()%>%chartSeries()
+T%>%chartSeries(TA='addBBands();addVo();addMACD()',subset='2018',name="att 2018")
+
+AAL%>%Ad()%>%chartSeries()
+AAL%>%chartSeries(TA='addBBands();addVo();addMACD()',subset='2018',name="american airlines 2018")
 
 #see the relationship of amazon with other big tech companies:
 library(PerformanceAnalytics)
 data<-cbind(diff(log(Cl(AMZN))),diff(log(Cl(GOOGL))),diff(log(Cl(AAPL))),diff(log(Cl(FB))))
 chart.Correlation(data)
+
+#for att data
+data1<-cbind(diff(log(Cl(att))),diff(log(Cl(sprint))),diff(log(Cl(tmobile))),diff(log(Cl(verizon))))
+chart.Correlation(data1)
+
+#for american airline
+data2<-cbind(diff(log(Cl(american))),diff(log(Cl(southwest))),diff(log(Cl(alaska))),diff(log(Cl(delta))))
+chart.Correlation(data2)
 
 #get the mean of logreturn as the return and variance as the deviation to say draw the retunn vs risk graph for these four
 #stocks to see which one we should buy.
@@ -142,39 +177,152 @@ meandata<-cbind(mean(data$AMZN.Close,na.rm=TRUE),mean(data$GOOGL.Close,na.rm=TRU
 vardata<-cbind(var(data$AMZN.Close,na.rm=TRUE),var(data$GOOGL.Close,na.rm=TRUE),var(data$AAPL.Close,na.rm=TRUE),var(data$FB.Close,na.rm=TRUE))
 
 #using random walk to simulate the change notice that set.seed() is not set, so each time the simulation is different.
-mu<-mean(diff(log(stock_prices)),na.rm=TRUE)
-sig<-sd(diff(log(stock_prices)),na.rm=TRUE)
+mu<-mean(diff(log(stock_prices[1:1200])),na.rm=TRUE)
+sig<-sd(diff(log(stock_prices[1:1200])),na.rm=TRUE)
 
-price<-rep(NA,nrow(stock_prices))
-
-price[1]=1512.29 #this is the price of 2015/01/01
-for(i in 2:nrow(stock_prices)){
-  price[i]<-price[i-1]*exp(rnorm(1,mu,sig))
-}
-
-random_data<-cbind(price,1:nrow(stock_prices))
-colnames(random_data)<-c("Price","Day")
-random_data<-as.data.frame(random_data)
-
-random_data%>%ggplot(aes(Day,Price))+geom_line()+labs(title="Amazon (AMZN) price simulation for 4 years")+theme_bw()
-
-N<-500
-mc_matrix<-matrix(nrow=nrow(stock),ncol=N)
-mc_matrix[1,1]<-as.numeric(stock_prices[nrow(stock_prices)])
+# remainingrow<-nrow(stock_prices)-1200
+# price<-rep(NA,remainingrow)
+# 
+# price[1]=980.85 # this is the stock price on date 2017-10-05
+# for(i in 2:remainingrow){
+#   price[i]<-price[i-1]*exp(rnorm(1,mu,sig))
+# }
+# 
+# random_data<-cbind(price,1:remainingrow)
+# colnames(random_data)<-c("Price","Day")
+# random_data<-as.data.frame(random_data)
+# 
+# random_data%>%ggplot(aes(Day,Price))+geom_line()+labs(title="Amazon (AMZN) price simulation from 2017-10-05 to 2018-11-20")+theme_bw()
+#doing monto_calo for Amazon stock
+N<-50
+mc_matrix<-matrix(nrow=remainingrow,ncol=N)
+mc_matrix[1,1]<-as.numeric(stock_prices[1200])
 for(j in 1:ncol(mc_matrix)){
-  mc_matrix[1,j]<-as.numeric(stock_prices[nrow(stock_prices)])
-  for(i in 2:nrow(stock)){
+  mc_matrix[1,j]<-as.numeric(stock_prices[1200])
+  for(i in 2:remainingrow){
     mc_matrix[i,j]<-mc_matrix[i-1,j]*exp(rnorm(1,mu,sig))
   }
 }
-name<-str_c("Sim ",seq(1,N))
+name<-str_c(seq(1,N))
 name<-c("Day",name)
 
-final_mat<-cbind(1:nrow(stock),mc_matrix)
+final_mat<-cbind(1:remainingrow,mc_matrix)
 final_mat<-as.tibble(final_mat)
 colnames(final_mat)<-name
 
-final_mat%>%gather("Simulation","Price",2:501)%>%ggplot(aes(x=Day,y=Price,Group=Simulation))+geom_line(alpha=0.2)+labs(title="(AMZN): 500 Monte Carlo Simulations for 4 Years")+theme_bw()
+final_avg<-rep(0,remainingrow)
+for(row in 1:remainingrow)
+{
+  for(col in colnames(final_mat))
+  {
+    if(col=="Day")
+    {
+      next
+    }
+    #print(col)
+    #this is the way how to access the tibble object kind of weird.
+    y<-final_mat[toString(col)][[1]]
+    #print(row)
+    final_avg[row]<-final_avg[row]+y[row]
+  }
+}
+final_avg<-final_avg/N
+par(new=TRUE)
+final_mat%>%gather("Simulation","Price",2:N+1)%>%ggplot(aes(x=Day,y=Price,Group=Simulation))+geom_line(alpha=0.2)+labs(title="Amazon (AMZN) price simulation from 2017-10-05 to 2018-11-20")+theme_bw()
+par(new=TRUE)
+plot(stock_prices[1201:nrow(stock_prices),],col="green")
+par(new=TRUE)
+plot(final_avg,col="red")
+
+#doing monte carlo for att stock
+mu<-mean(diff(log(att[1:1200])),na.rm=TRUE)
+sig<-sd(diff(log(att[1:1200])),na.rm=TRUE)
+N<-50
+mc_matrix<-matrix(nrow=remainingrow,ncol=N)
+mc_matrix[1,1]<-as.numeric(att[1200])
+for(j in 1:ncol(mc_matrix)){
+  mc_matrix[1,j]<-as.numeric(att[1200])
+  for(i in 2:remainingrow){
+    mc_matrix[i,j]<-mc_matrix[i-1,j]*exp(rnorm(1,mu,sig))
+  }
+}
+name<-str_c(seq(1,N))
+name<-c("Day",name)
+
+final_mat<-cbind(1:remainingrow,mc_matrix)
+final_mat<-as.tibble(final_mat)
+colnames(final_mat)<-name
+
+final_avg<-rep(0,remainingrow)
+for(row in 1:remainingrow)
+{
+  for(col in colnames(final_mat))
+  {
+    if(col=="Day")
+    {
+      next
+    }
+    #print(col)
+    #this is the way how to access the tibble object kind of weird.
+    y<-final_mat[toString(col)][[1]]
+    #print(row)
+    final_avg[row]<-final_avg[row]+y[row]
+  }
+}
+final_avg<-final_avg/N
+par(new=TRUE)
+final_mat%>%gather("Simulation","Price",2:N+1)%>%ggplot(aes(x=Day,y=Price,Group=Simulation))+geom_line(alpha=0.2)+labs(title="att price simulation from 2017-10-05 to 2018-11-20")+theme_bw()
+par(new=TRUE)
+plot(att[1201:nrow(att),],col="green")
+par(new=TRUE)
+plot(final_avg,col="red")
+
+
+#doing monte carlo for airline stock
+mu<-mean(diff(log(airline[1:1200])),na.rm=TRUE)
+sig<-sd(diff(log(airline[1:1200])),na.rm=TRUE)
+N<-50
+mc_matrix<-matrix(nrow=remainingrow,ncol=N)
+mc_matrix[1,1]<-as.numeric(airline[1200])
+for(j in 1:ncol(mc_matrix)){
+  mc_matrix[1,j]<-as.numeric(airline[1200])
+  for(i in 2:remainingrow){
+    mc_matrix[i,j]<-mc_matrix[i-1,j]*exp(rnorm(1,mu,sig))
+  }
+}
+name<-str_c(seq(1,N))
+name<-c("Day",name)
+
+final_mat<-cbind(1:remainingrow,mc_matrix)
+final_mat<-as.tibble(final_mat)
+colnames(final_mat)<-name
+
+final_avg<-rep(0,remainingrow)
+for(row in 1:remainingrow)
+{
+  for(col in colnames(final_mat))
+  {
+    if(col=="Day")
+    {
+      next
+    }
+    #print(col)
+    #this is the way how to access the tibble object kind of weird.
+    y<-final_mat[toString(col)][[1]]
+    #print(row)
+    final_avg[row]<-final_avg[row]+y[row]
+  }
+}
+final_avg<-final_avg/N
+par(new=TRUE)
+final_mat%>%gather("Simulation","Price",2:N+1)%>%ggplot(aes(x=Day,y=Price,Group=Simulation))+geom_line(alpha=0.2)+labs(title="att price simulation from 2017-10-05 to 2018-11-20")+theme_bw()
+par(new=TRUE)
+plot(att[1201:nrow(att),],col="green")
+par(new=TRUE)
+plot(final_avg,col="red")
+
+
+
 
 #building the model of knn to determine if the stock will go up and donw
 library(class)
@@ -184,32 +332,75 @@ set.seed(100)
 
 #from the previous analysis we can see that Amazon and Google and Facebook are highly correlated, so will using 
 #that price to predict too.
-stocks <- read.csv('stocks.csv')
 fm<-as.data.frame(stock_prices)
 fm$GOOGL.Close<-stock_prices_goo
 fm$AAPL.Close<-stock_prices_aap
+
+#airline data
+fm.airline<-as.data.frame(american)
+fm.airline$southwest<-southwest
+fm.airline$alaska<-alaska
+fm.airline$delta<-delta
+fm.airline$Increase<-rep(TRUE,nrow(stock_prices))
+
+#for att data
+fm.att<-as.data.frame(att)
+fm.att$verizon<-verizon
+
+
 #don't need this for the feature engineering.
 fm$FB.Close<-stock_prices_fb
 getSymbols('AMZN', from='2012-11-11', to='2013-01-01')
+getSymbols("T",from='2012-11-11', to='2013-01-01')
+getSymbols("AAL",from='2012-11-11', to='2013-01-01')
+getSymbols("DAL",from='2012-11-11', to='2013-01-01')
+getSymbols("LUV",from='2012-11-11', to='2013-01-01')
+getSymbols("ALK",from='2012-11-11', to='2013-01-01')
+getSymbols("VZ",from='2012-11-11', to='2013-01-01')
 #find the start price is 2012-12-31 is 250.87 this is needed to determine if the first record is increasing or
 #decreasing
+#amazon start
 start<-250.87
-#construct the increase label.
+#att start
+start.att<-33.71
+start.american<-13.50
+
+#construct the increase label for amazon data
 for(i in 1:nrow(stock_prices))
 {
   fm$Increase[i]<-(fm$AMZN.Close[i]-start)>=0
   start=fm$AMZN.Close[i]
 }
+#construct the increase label for airline data
+for(i in 1:nrow(stock_prices))
+{
+  fm.airline$Increase[i]<-(fm.airline$AAL.Close[i]-start.american)>=0
+  start.american=fm.airline$AAL.Close[i]
+}
+#construct the increase label for att data
+for(i in 1:nrow(stock_prices))
+{
+  fm.att$Increase[i]<-(fm.att$T.Close[i]-start.att)>=0
+  start.att=fm.airline$AAL.Close[i]
+}
+#for Amazon
 fm.train<-fm[1:1200,]
 fm.test<-fm[1201,nrow(stock_prices)]
-#construct the predictors
+#for american airline
+fm.airline.train<-fm.airline[1:1200,]
+fm.airline.test<-fm.airline[1201,nrow(stock_prices)]
+#for att data
+fm.att.train<-fm.att[1:1200,]
+fm.att.test<-fm.att[1201,nrow(stock_prices)]
+
+
+#construct the predictors for amazon
 predictors <- cbind(lag(fm$AAPL.Close, default = 76.02), lag(fm$GOOGL.Close, default = 354.0440), lag(fm$AMZN.Close, default = 250.87))
 prediction <- knn(predictors[1:1200, ], predictors[1200:nrow(stock_prices), ], fm$Increase[1:1200], k = 9)
 table(prediction, fm$Increase[1200:nrow(stock_prices)])
 mean(prediction == fm$Increase[1200:nrow(stock_prices)])
 #this is the output for k=10 and beat  random so based on how much money you have a litle bit over 50% actually it is good
 0.584507
-
 accuracy <- rep(0, 20)
 k <- 1:20
 for(x in k){
@@ -221,8 +412,33 @@ for(x in k){
 plot(k, accuracy, type = 'b')
 #from here we can see the best accuracy can be achieved when k=9 and the accuracy is calculated above we saw the accuracy is 58.45%
 
+predictors.airline<-cbind(lag(fm.airline$southwest, default = 10.24), lag(fm.airline$delta, default = 11.87), lag(fm.airline$AAL.Close, default = 13.50))
+prediction.airline<-knn(predictors.airline[1:1200, ], predictors.airline[1200:nrow(stock_prices), ], fm.airline$Increase[1:1200], k = 3)
+table(prediction.airline, fm.airline$Increase[1200:nrow(stock_prices)])
+mean(prediction.airline == fm.airline$Increase[1200:nrow(stock_prices)])
+0.5880
+accuracy.airline <- rep(0, 20)
+k <- 1:20
+for(x in k){
+  prediction <- knn(predictors.airline[1:1200, ], predictors.airline[1200:nrow(stock_prices), ],
+                    fm.airline$Increase[1:1200], k = x)
+  accuracy.airline[x] <- mean(prediction == fm.airline$Increase[1200:nrow(stock_prices)])
+}
+plot(k, accuracy.airline, type = 'b',main="knn k value for airline")
 
-
+#now constaruc the knn for att data
+predictors.att<-cbind(lag(fm.att$verizon, default = 43.27), lag(fm.att$T.Close, default = 33.7))
+prediction.att<-knn(predictors.att[1:1200, ], predictors.att[1200:nrow(stock_prices), ], fm.att$Increase[1:1200], k = 12)
+table(prediction.att, fm.att$Increase[1200:nrow(stock_prices)])
+mean(prediction.att == fm.att$Increase[1200:nrow(stock_prices)])
+accuracy.att <- rep(0, 20)
+k <- 1:20
+for(x in k){
+  prediction.att <- knn(predictors.att[1:1200, ], predictors.att[1200:nrow(stock_prices), ],
+                    fm.att$Increase[1:1200], k = x)
+  accuracy.att[x] <- mean(prediction.att == fm.att$Increase[1200:nrow(stock_prices)])
+}
+plot(k, accuracy.att, type = 'b',main="knn k value for att")
 
 
 
