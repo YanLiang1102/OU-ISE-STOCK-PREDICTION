@@ -43,95 +43,95 @@ stock=log(stock_prices)
 #doing lag1 differencing model to make the series to be stationary.
 stock=diff(log(stock_prices),lag=3)
 stock=stock[!is.na(stock)]
-plot(stock,type='l',main='log amazon with lag1')
-
-#choose 0.8 as the training and 0.2 as the testing
-breakpoint = floor(nrow(stock)*0.8)
-
-#using the pacf to determine the p value for ar model and using the acf to determine the q value for ma model
-par(mfrow = c(1,1))
-
-acf.stock = acf(stock[c(1:breakpoint),], main='ACF Plot', lag.max=100)
-#based on the acf graph I will chose the q=4
-pacf.stock = pacf(stock[c(1:breakpoint),], main='PACF Plot', lag.max=100)  
-#based pacf graph I will choose the p=12
-
-# Initialzing an xts object for Actual log returns
-stock[breakpoint+1,]
-#base on the return for the test dataset 2017-09-20 -0.01385732
-Actual_series = xts(0,as.Date("2017-09-19","%Y-%m-%d"))
-
-# Initialzing a dataframe for the forecasted return series
-forecasted_series = data.frame(Forecasted = numeric())
-b<-breakpoint 
-stock_train = stock[1:b, ]
-fit = arima(stock_train, order = c(12, 3, 4),include.mean=FALSE)
-summary(fit)
-
-fit = arima(stock_train, order = c(65, 0, 0),include.mean=FALSE)
-summary(fit)
-
-for (b in breakpoint:(nrow(stock)-1)) {
-  print(b)
-  stock_train = stock[1:b, ]
-  stock_test = stock[(b+1):nrow(stock), ]
-  
-  # Summary of the ARIMA model using the determined (p,d,q) parameters
-  fit = arima(stock_train, order = c(12,3, 4),include.mean=FALSE)
-  #summary(fit)
-  
-  # plotting a acf plot of the residuals
-  #acf(fit$residuals,main="Residuals plot")
-  
-  # Forecasting the log returns
-  #arima.forecast = forecast.Arima(fit, h = 1,level=99)
-  arima.forecast = forecast(fit, h =1,level=99)
-  #summary(arima.forecast)
-  
-  # plotting the forecast
-  par(mfrow=c(1,1))
-  #plot(arima.forecast, main = "ARIMA Forecast")
-  
-  # Creating a series of forecasted returns for the forecasted period
-  forecasted_series = rbind(forecasted_series,arima.forecast$mean[1])
-  colnames(forecasted_series) = c("Forecasted")
-  
-  # Creating a series of actual returns for the forecasted period
-  Actual_return = stock[(b+1),]
-  Actual_series = c(Actual_series,xts(Actual_return))
-  rm(Actual_return)
-  
-  #print(stock_prices[(b+1),])
-  #print(stock_prices[(b+2),]) 
-}
-
-# Adjust the length of the Actual return series, since when construct the xts it starts with a dummy value 0
-Actual_series = Actual_series[-4]
-
-# Create a time series object of the forecasted series
-forecasted_series = xts(forecasted_series,index(Actual_series))
-
-# Create a plot of the two return series - Actual versus Forecasted
-legend('bottomright',c("Actual","Forecasted"),lty=c(1,1),lwd=c(1.5,1.5),col=c('black','red'))
-plot(Actual_series,type='l',main='Actual Returns Vs Forecasted Returns')
-lines(forecasted_series,lwd=1.5,col='red')
-
-
-# Create a table for the accuracy of the forecast
-#comparsion = merge(Actual_series,forecasted_series)
-#comparsion$Accuracy = sign(comparsion$Actual_series)==sign(comparsion$Forecasted)
-#comparsion$Accuracy=(comparsion$Actual_series>1&&comparsion$Forecasted>1)||(comparsion$Actual_series1&&comparsion$Forecasted>1)
-#Accuracy_percentage = sum(comparsion$Accuracy == 1)*100/length(comparsion$Accuracy)
-#print(Accuracy_percentage)
-
-#51.85 might be not a good result.
-sqrt(mean((Actual_series-forecasted_series)**2))
-#the RMSE is 0.02025829 error to predict the log diff.
-
-#LSTM for the stock prediction
-devtools::install_github("rstudio/keras")
-library(keras)
-install_keras()
+# plot(stock,type='l',main='log amazon with lag1')
+# 
+# #choose 0.8 as the training and 0.2 as the testing
+# breakpoint = floor(nrow(stock)*0.8)
+# 
+# #using the pacf to determine the p value for ar model and using the acf to determine the q value for ma model
+# par(mfrow = c(1,1))
+# 
+# acf.stock = acf(stock[c(1:breakpoint),], main='ACF Plot', lag.max=100)
+# #based on the acf graph I will chose the q=4
+# pacf.stock = pacf(stock[c(1:breakpoint),], main='PACF Plot', lag.max=100)  
+# #based pacf graph I will choose the p=12
+# 
+# # Initialzing an xts object for Actual log returns
+# stock[breakpoint+1,]
+# #base on the return for the test dataset 2017-09-20 -0.01385732
+# Actual_series = xts(0,as.Date("2017-09-19","%Y-%m-%d"))
+# 
+# # Initialzing a dataframe for the forecasted return series
+# forecasted_series = data.frame(Forecasted = numeric())
+# b<-breakpoint 
+# stock_train = stock[1:b, ]
+# fit = arima(stock_train, order = c(12, 3, 4),include.mean=FALSE)
+# summary(fit)
+# 
+# fit = arima(stock_train, order = c(65, 0, 0),include.mean=FALSE)
+# summary(fit)
+# 
+# for (b in breakpoint:(nrow(stock)-1)) {
+#   print(b)
+#   stock_train = stock[1:b, ]
+#   stock_test = stock[(b+1):nrow(stock), ]
+#   
+#   # Summary of the ARIMA model using the determined (p,d,q) parameters
+#   fit = arima(stock_train, order = c(12,3, 4),include.mean=FALSE)
+#   #summary(fit)
+#   
+#   # plotting a acf plot of the residuals
+#   #acf(fit$residuals,main="Residuals plot")
+#   
+#   # Forecasting the log returns
+#   #arima.forecast = forecast.Arima(fit, h = 1,level=99)
+#   arima.forecast = forecast(fit, h =1,level=99)
+#   #summary(arima.forecast)
+#   
+#   # plotting the forecast
+#   par(mfrow=c(1,1))
+#   #plot(arima.forecast, main = "ARIMA Forecast")
+#   
+#   # Creating a series of forecasted returns for the forecasted period
+#   forecasted_series = rbind(forecasted_series,arima.forecast$mean[1])
+#   colnames(forecasted_series) = c("Forecasted")
+#   
+#   # Creating a series of actual returns for the forecasted period
+#   Actual_return = stock[(b+1),]
+#   Actual_series = c(Actual_series,xts(Actual_return))
+#   rm(Actual_return)
+#   
+#   #print(stock_prices[(b+1),])
+#   #print(stock_prices[(b+2),]) 
+# }
+# 
+# # Adjust the length of the Actual return series, since when construct the xts it starts with a dummy value 0
+# Actual_series = Actual_series[-4]
+# 
+# # Create a time series object of the forecasted series
+# forecasted_series = xts(forecasted_series,index(Actual_series))
+# 
+# # Create a plot of the two return series - Actual versus Forecasted
+# legend('bottomright',c("Actual","Forecasted"),lty=c(1,1),lwd=c(1.5,1.5),col=c('black','red'))
+# plot(Actual_series,type='l',main='Actual Returns Vs Forecasted Returns')
+# lines(forecasted_series,lwd=1.5,col='red')
+# 
+# 
+# # Create a table for the accuracy of the forecast
+# #comparsion = merge(Actual_series,forecasted_series)
+# #comparsion$Accuracy = sign(comparsion$Actual_series)==sign(comparsion$Forecasted)
+# #comparsion$Accuracy=(comparsion$Actual_series>1&&comparsion$Forecasted>1)||(comparsion$Actual_series1&&comparsion$Forecasted>1)
+# #Accuracy_percentage = sum(comparsion$Accuracy == 1)*100/length(comparsion$Accuracy)
+# #print(Accuracy_percentage)
+# 
+# #51.85 might be not a good result.
+# sqrt(mean((Actual_series-forecasted_series)**2))
+# #the RMSE is 0.02025829 error to predict the log diff.
+# 
+# #LSTM for the stock prediction
+# devtools::install_github("rstudio/keras")
+# library(keras)
+# install_keras()
 
 #using random walk and monte carlo simulation
 library(quantmod)
